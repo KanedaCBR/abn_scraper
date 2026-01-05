@@ -1,0 +1,21 @@
+services:
+  scraper:
+    build: .
+    volumes:
+      - ./downloads:/app/downloads
+    environment:
+      - PYTHONUNBUFFERED=1
+    command:
+      [
+        "BCNL pty ltd",
+        "Quang Nhat Nguyen",
+        "Mr Vinh Kang Nguyen",
+        "Huong Thi Thuy Vo",
+        "HTT Law Firm Pty Ltd",
+        "Vo lawyers",
+        "Therapy in the Home pty ltd",
+        "Vo Anh Tuan Nguyen",
+        "--max-results",
+        "20",
+        "--headless",
+      ]
