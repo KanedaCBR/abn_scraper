@@ -215,65 +215,112 @@ class ABRPDFParser:
         abn = abn_match.group(1).replace(" ", "") if abn_match else None
         
         record_extracted = self._find_value("Record extracted")
-        entity_name = self._find_value("Entity name")
+        abn_updated = self._find_value("ABN last updated")
         entity_type = self._find_value("Entity type")
 
-        data['entity'] = {
-            'abn': abn,
-            'entity_name': entity_name,
-            'entity_type': entity_type,
-            'first_active_date': None,
-            'abn_last_updated_date': None,
-            'record_extracted_date': parse_date(record_extracted),
-            'source_document_id': self.source_doc_id
-        }
+        # Actual PDF section headers (not "history" suffix - actual format has "From To" in header)
+        # Sections: "Entity name From To", "ABN Status From To", "Main business location From To", 
+        # "Good & Services Tax (GST) From To", "Trading name(s)", etc.
+        headers = [
+            "Entity name", "ABN Status", "Entity type", "Main business location", 
+            "Good & Services Tax (GST)", "Goods & Services Tax (GST)",  # Both spellings
+            "Trading name(s)", "Business name(s)", "ASIC registration", 
+            "Record extracted", "Disclaimer", "Warning Statement"
+        ]
 
-        headers = ["Entity name history", "ABN status history", "Main business location history", 
-                   "Goods & Services Tax (GST) history", "Trading name(s)", "Business name(s)", "ASIC registration", "Record extracted"]
-
-        # Entity Name History
-        name_text = self._get_section("Entity name history", headers)
-        for line in name_text.split('\n'):
-            match = re.search(r"(.*?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s+(.*)", line)
+        # Entity Name History - section starts with "Entity name From To"
+        name_section = self._get_section("Entity name", headers)
+        first_entity_name = None
+        for line in name_section.split('\n'):
+            # Skip header line that contains 'From To'
+            if 'From To' in line or not line.strip():
+                continue
+            # Pattern: NAME DD Mon YYYY (current) or NAME DD Mon YYYY DD Mon YYYY
+            match = re.search(r"^(.+?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s*(.*)?$", line.strip())
             if match:
-                row = normalize_history_row({'from': match.group(2), 'to': match.group(3)}, self.source_doc_id)
-                row.update({'abn': abn, 'entity_name': match.group(1).strip()})
+                name = match.group(1).strip()
+                from_date = match.group(2)
+                to_part = match.group(3).strip() if match.group(3) else ""
+                
+                if not first_entity_name:
+                    first_entity_name = name
+                
+                row = normalize_history_row({'from': from_date, 'to': to_part}, self.source_doc_id)
+                row.update({'abn': abn, 'entity_name': name})
                 data['name_history'].append(row)
 
-        # ABN Status History
-        status_text = self._get_section("ABN status history", headers)
-        for line in status_text.split('\n'):
-            match = re.search(r"(.*?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s+(.*)", line)
+        # ABN Status History - section starts with "ABN Status From To"
+        status_section = self._get_section("ABN Status", headers)
+        earliest_active_date = None
+        for line in status_section.split('\n'):
+            if 'From To' in line or not line.strip():
+                continue
+            match = re.search(r"^(.+?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s*(.*)?$", line.strip())
             if match:
-                row = normalize_history_row({'from': match.group(2), 'to': match.group(3)}, self.source_doc_id)
-                row.update({'abn': abn, 'status': match.group(1).strip()})
+                status = match.group(1).strip()
+                from_date = match.group(2)
+                to_part = match.group(3).strip() if match.group(3) else ""
+                
+                row = normalize_history_row({'from': from_date, 'to': to_part}, self.source_doc_id)
+                row.update({'abn': abn, 'status': status})
                 data['status_history'].append(row)
-                if not data['entity']['first_active_date'] or (row['from_date'] and row['from_date'] < data['entity']['first_active_date']):
-                    data['entity']['first_active_date'] = row['from_date']
+                
+                # Track earliest active date
+                if status.lower() == 'active' and row['from_date']:
+                    if not earliest_active_date or row['from_date'] < earliest_active_date:
+                        earliest_active_date = row['from_date']
 
-        # Location History
-        loc_text = self._get_section("Main business location history", headers)
-        for line in loc_text.split('\n'):
-            match = re.search(r"([A-Z]{2,3})\s+(\d{4})\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s+(.*)", line)
+        # Main Business Location History - section starts with "Main business location From To"
+        loc_section = self._get_section("Main business location", headers)
+        for line in loc_section.split('\n'):
+            if 'From To' in line or not line.strip():
+                continue
+            # Pattern: STATE POSTCODE DD Mon YYYY (current) or STATE POSTCODE DD Mon YYYY DD Mon YYYY
+            match = re.search(r"^([A-Z]{2,3})\s+(\d{4})\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s*(.*)?$", line.strip())
             if match:
-                row = normalize_history_row({'from': match.group(3), 'to': match.group(4)}, self.source_doc_id)
-                row.update({'abn': abn, 'state': match.group(1), 'postcode': match.group(2)})
+                state = match.group(1)
+                postcode = match.group(2)
+                from_date = match.group(3)
+                to_part = match.group(4).strip() if match.group(4) else ""
+                
+                row = normalize_history_row({'from': from_date, 'to': to_part}, self.source_doc_id)
+                row.update({'abn': abn, 'state': state, 'postcode': postcode})
                 data['location_history'].append(row)
 
-        # GST History
-        gst_text = self._get_section("Goods & Services Tax (GST) history", headers)
-        if gst_text and "No current or historical GST" not in gst_text:
-            for line in gst_text.split('\n'):
-                match = re.search(r"(.*?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s+(.*)", line)
+        # GST History - may be "Good & Services Tax" or "Goods & Services Tax"
+        gst_section = self._get_section("Good & Services Tax (GST)", headers)
+        if not gst_section:
+            gst_section = self._get_section("Goods & Services Tax (GST)", headers)
+        if gst_section and "No current or historical GST" not in gst_section:
+            for line in gst_section.split('\n'):
+                if 'From To' in line or not line.strip():
+                    continue
+                match = re.search(r"^(.+?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s*(.*)?$", line.strip())
                 if match:
-                    row = normalize_history_row({'from': match.group(2), 'to': match.group(3)}, self.source_doc_id)
-                    row.update({'abn': abn, 'gst_status': match.group(1).strip()})
+                    gst_status = match.group(1).strip()
+                    from_date = match.group(2)
+                    to_part = match.group(3).strip() if match.group(3) else ""
+                    
+                    row = normalize_history_row({'from': from_date, 'to': to_part}, self.source_doc_id)
+                    row.update({'abn': abn, 'gst_status': gst_status})
                     data['gst_history'].append(row)
 
-        # ASIC
-        asic_text = self._get_section("ASIC registration", headers)
-        if asic_text:
-            match = re.search(r"([A-Z]{3})\s+([\d\s]+)", asic_text)
+        # Trading Names
+        tn_section = self._get_section("Trading name(s)", headers)
+        if tn_section and "stopped collecting" not in tn_section:
+            for line in tn_section.split('\n'):
+                if 'From To' in line or not line.strip() or 'ABR stopped' in line or 'business name' in line.lower():
+                    continue
+                match = re.search(r"^(.+?)\s+(\d{2}\s+[A-Z][a-z]{2}\s+\d{4})\s*(.*)?$", line.strip())
+                if match:
+                    row = normalize_history_row({'from': match.group(2), 'to': match.group(3) or ""}, self.source_doc_id)
+                    row.update({'abn': abn, 'trading_name': match.group(1).strip()})
+                    data['trading_names'].append(row)
+
+        # ASIC Registration
+        asic_section = self._get_section("ASIC registration", headers)
+        if asic_section:
+            match = re.search(r"([A-Z]{3})\s+([\d\s]+)", asic_section)
             if match:
                 data['asic_registration'].append({
                     'abn': abn,
@@ -281,6 +328,17 @@ class ABRPDFParser:
                     'asic_type': match.group(1),
                     'source_document_id': self.source_doc_id
                 })
+
+        # Build entity record
+        data['entity'] = {
+            'abn': abn,
+            'entity_name': first_entity_name,
+            'entity_type': entity_type,
+            'first_active_date': earliest_active_date,
+            'abn_last_updated_date': parse_date(abn_updated),
+            'record_extracted_date': parse_date(record_extracted),
+            'source_document_id': self.source_doc_id
+        }
 
         return data
 

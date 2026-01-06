@@ -1,0 +1,149 @@
+{
+  "entity": {
+    "abn": "71483619089",
+    "entity_name": "NGUYEN, VINH KHANG",
+    "entity_type": "Individual/Sole Trader",
+    "first_active_date": "2007-07-01",
+    "abn_last_updated_date": null,
+    "record_extracted_date": "2026-01-05",
+    "source_document_id": "test-uuid"
+  },
+  "name_history": [
+    {
+      "from_date": "2012-08-14",
+      "to_date": null,
+      "is_current": true,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "entity_name": "NGUYEN, VINH KHANG"
+    },
+    {
+      "from_date": "2007-07-01",
+      "to_date": "2012-08-14",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "entity_name": "NGUYEN, VINH KHANG"
+    }
+  ],
+  "status_history": [
+    {
+      "from_date": "2013-07-15",
+      "to_date": null,
+      "is_current": true,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "status": "Active"
+    },
+    {
+      "from_date": "2009-07-01",
+      "to_date": "2013-07-15",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "status": "Cancelled"
+    },
+    {
+      "from_date": "2007-07-01",
+      "to_date": "2009-07-01",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "status": "Active"
+    }
+  ],
+  "location_history": [
+    {
+      "from_date": "2020-07-30",
+      "to_date": null,
+      "is_current": true,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3032"
+    },
+    {
+      "from_date": "2019-01-24",
+      "to_date": "2020-07-30",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3019"
+    },
+    {
+      "from_date": "2018-09-17",
+      "to_date": "2019-01-24",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3019"
+    },
+    {
+      "from_date": "2018-07-31",
+      "to_date": "2018-09-17",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3019"
+    },
+    {
+      "from_date": "2014-09-20",
+      "to_date": "2018-07-31",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3032"
+    },
+    {
+      "from_date": "2013-07-15",
+      "to_date": "2014-09-20",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3032"
+    },
+    {
+      "from_date": "2007-07-01",
+      "to_date": "2013-07-15",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "state": "VIC",
+      "postcode": "3047"
+    }
+  ],
+  "gst_history": [
+    {
+      "from_date": "2017-07-01",
+      "to_date": null,
+      "is_current": true,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "gst_status": "Registered"
+    },
+    {
+      "from_date": "2009-07-01",
+      "to_date": "2017-06-30",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "gst_status": "Cancelled"
+    },
+    {
+      "from_date": "2007-07-01",
+      "to_date": "2009-06-30",
+      "is_current": false,
+      "source_document_id": "test-uuid",
+      "abn": "71483619089",
+      "gst_status": "Registered"
+    }
+  ],
+  "asic_registration": [],
+  "business_names": [],
+  "trading_names": []
+}
