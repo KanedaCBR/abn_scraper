@@ -242,7 +242,7 @@ if page == "🏠 Dashboard":
                     legend=dict(orientation="h", yanchor="bottom", y=-0.3)
                 )
                 fig.update_traces(textposition='inside', textinfo='percent+label')
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
         
         with col2:
             st.markdown('<div class="section-header">📍 State Distribution</div>', unsafe_allow_html=True)
@@ -261,7 +261,7 @@ if page == "🏠 Dashboard":
                     yaxis_title="Count",
                     showlegend=False
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
     
     except Exception as e:
         st.error(f"⚠️ Database connection error: {e}")
@@ -405,7 +405,7 @@ elif page == "📋 Entity Detail":
                 if entity_data['status_history']:
                     df = pd.DataFrame(entity_data['status_history'])
                     df['is_current'] = df['is_current'].apply(lambda x: '✅ Current' if x else '➖ Historical')
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.dataframe(df, width="stretch", hide_index=True)
                 else:
                     st.info("No status history available")
                 
@@ -414,7 +414,7 @@ elif page == "📋 Entity Detail":
                 if entity_data['location_history']:
                     df = pd.DataFrame(entity_data['location_history'])
                     df['is_current'] = df['is_current'].apply(lambda x: '✅ Current' if x else '➖ Historical')
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.dataframe(df, width="stretch", hide_index=True)
                 else:
                     st.info("No location history available")
                 
@@ -425,7 +425,7 @@ elif page == "📋 Entity Detail":
                     st.markdown('<div class="section-header">🏢 Business Names</div>', unsafe_allow_html=True)
                     if entity_data['business_names']:
                         df = pd.DataFrame(entity_data['business_names'])
-                        st.dataframe(df, use_container_width=True, hide_index=True)
+                        st.dataframe(df, width="stretch", hide_index=True)
                     else:
                         st.info("No business names registered")
                 
@@ -433,7 +433,7 @@ elif page == "📋 Entity Detail":
                     st.markdown('<div class="section-header">🏷️ Trading Names</div>', unsafe_allow_html=True)
                     if entity_data['trading_names']:
                         df = pd.DataFrame(entity_data['trading_names'])
-                        st.dataframe(df, use_container_width=True, hide_index=True)
+                        st.dataframe(df, width="stretch", hide_index=True)
                     else:
                         st.info("No trading names registered")
                 
@@ -442,7 +442,7 @@ elif page == "📋 Entity Detail":
                 if entity_data['gst_history']:
                     df = pd.DataFrame(entity_data['gst_history'])
                     df['is_current'] = df['is_current'].apply(lambda x: '✅ Current' if x else '➖ Historical')
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.dataframe(df, width="stretch", hide_index=True)
                 else:
                     st.info("No GST registration history")
                 
@@ -450,7 +450,7 @@ elif page == "📋 Entity Detail":
                 st.markdown('<div class="section-header">🏛️ ASIC Registration</div>', unsafe_allow_html=True)
                 if entity_data['asic_registration']:
                     df = pd.DataFrame(entity_data['asic_registration'])
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.dataframe(df, width="stretch", hide_index=True)
                 else:
                     st.info("No ASIC registration linked")
             
@@ -491,7 +491,7 @@ elif page == "📊 Analytics":
                 yaxis_title="New Registrations"
             )
             fig.update_traces(line=dict(width=3), marker=dict(size=10))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         
         # Two column layout
         col1, col2 = st.columns(2)
@@ -516,7 +516,7 @@ elif page == "📊 Analytics":
                     showlegend=False,
                     height=400
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
             else:
                 st.info("No trading name reuse detected")
         
@@ -541,7 +541,7 @@ elif page == "📊 Analytics":
                     showlegend=False,
                     height=400
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
             else:
                 st.info("No location changes detected")
     
