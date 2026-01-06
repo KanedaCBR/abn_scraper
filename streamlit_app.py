@@ -7,7 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from db_queries import (
     get_dashboard_stats, search_entities, get_entity_detail,
-    get_entity_types, get_states, get_analytics_data
+    get_entity_types, get_states, get_analytics_data,
+    get_postcodes, get_analytics_data_filtered, get_map_data
 )
 
 # Page configuration
@@ -164,11 +165,20 @@ st.markdown("""
 st.sidebar.markdown("## 🔍 ABN Browser")
 st.sidebar.markdown("---")
 
+# Initialize page in session state if not present
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "🏠 Dashboard"
+
 page = st.sidebar.radio(
     "Navigation",
-    ["🏠 Dashboard", "🔍 Search", "📋 Entity Detail", "📊 Analytics"],
+    ["🏠 Dashboard", "🔍 Search", "📋 Entity Detail", "📊 Analytics", "🗺️ Map View"],
+    index=["🏠 Dashboard", "🔍 Search", "📋 Entity Detail", "📊 Analytics", "🗺️ Map View"].index(st.session_state.current_page),
     label_visibility="collapsed"
 )
+
+# Update session state when radio changes
+if page != st.session_state.current_page:
+    st.session_state.current_page = page
 
 # ============================================================
 # DASHBOARD PAGE
@@ -334,6 +344,7 @@ elif page == "🔍 Search":
                 with col2:
                     if st.button("View Details", key=f"view_{entity['abn']}"):
                         st.session_state.selected_abn = entity['abn']
+                        st.session_state.current_page = "📋 Entity Detail"
                         st.rerun()
             
             # Pagination controls
@@ -461,7 +472,7 @@ elif page == "📋 Entity Detail":
             st.error(f"⚠️ Error loading entity: {e}")
 
 # ============================================================
-# ANALYTICS PAGE
+# ANALYTICS PAGE (with filters)
 # ============================================================
 elif page == "📊 Analytics":
     st.markdown("""
@@ -472,12 +483,82 @@ elif page == "📊 Analytics":
     """, unsafe_allow_html=True)
     
     try:
-        analytics = get_analytics_data()
+        # Filters row
+        st.markdown('<div class="section-header">🔧 Filters</div>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            states = ["All States"] + get_states()
+            analytics_state = st.selectbox("State", states, key="analytics_state")
+        
+        with col2:
+            postcodes = ["All Postcodes"] + get_postcodes()
+            analytics_postcode = st.selectbox("Postcode", postcodes, key="analytics_postcode")
+        
+        with col3:
+            entity_types = ["All Types"] + get_entity_types()
+            analytics_entity_type = st.selectbox("Entity Type", entity_types, key="analytics_entity_type")
+        
+        # Get filtered data
+        filtered_analytics = get_analytics_data_filtered(
+            state=analytics_state if analytics_state != "All States" else None,
+            postcode=analytics_postcode if analytics_postcode != "All Postcodes" else None,
+            entity_type=analytics_entity_type if analytics_entity_type != "All Types" else None
+        )
+        
+        # Filtered count metric
+        st.markdown(f"**Showing {filtered_analytics['filtered_count']:,} entities matching filters**")
+        st.markdown("---")
+        
+        # Two column layout for charts
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown('<div class="section-header">📊 Entity Types</div>', unsafe_allow_html=True)
+            if filtered_analytics['entity_types']:
+                df = pd.DataFrame(filtered_analytics['entity_types'])
+                fig = px.pie(
+                    df, values='count', names='entity_type',
+                    color_discrete_sequence=px.colors.sequential.Purples_r,
+                    hole=0.4
+                )
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='white',
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=-0.3)
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                st.plotly_chart(fig, width="stretch")
+            else:
+                st.info("No data for current filters")
+        
+        with col2:
+            st.markdown('<div class="section-header">📍 State Distribution</div>', unsafe_allow_html=True)
+            if filtered_analytics['state_distribution']:
+                df = pd.DataFrame(filtered_analytics['state_distribution'])
+                fig = px.bar(
+                    df, x='state', y='count',
+                    color='count',
+                    color_continuous_scale='Purples'
+                )
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font_color='white',
+                    xaxis_title="State",
+                    yaxis_title="Count",
+                    showlegend=False
+                )
+                st.plotly_chart(fig, width="stretch")
+            else:
+                st.info("No data for current filters")
         
         # Registrations by year
         st.markdown('<div class="section-header">📅 Registrations by Year</div>', unsafe_allow_html=True)
-        if analytics['by_year']:
-            df = pd.DataFrame(analytics['by_year'])
+        if filtered_analytics['by_year']:
+            df = pd.DataFrame(filtered_analytics['by_year'])
             fig = px.line(
                 df, x='year', y='count',
                 markers=True,
@@ -492,61 +573,113 @@ elif page == "📊 Analytics":
             )
             fig.update_traces(line=dict(width=3), marker=dict(size=10))
             st.plotly_chart(fig, width="stretch")
-        
-        # Two column layout
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown('<div class="section-header">🏷️ Trading Name Reuse</div>', unsafe_allow_html=True)
-            st.caption("Trading names used by multiple ABNs")
-            if analytics['trading_name_reuse']:
-                df = pd.DataFrame(analytics['trading_name_reuse'])
-                fig = px.bar(
-                    df, x='abn_count', y='trading_name',
-                    orientation='h',
-                    color='abn_count',
-                    color_continuous_scale='Purples'
-                )
-                fig.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='white',
-                    xaxis_title="Number of ABNs",
-                    yaxis_title="",
-                    showlegend=False,
-                    height=400
-                )
-                st.plotly_chart(fig, width="stretch")
-            else:
-                st.info("No trading name reuse detected")
-        
-        with col2:
-            st.markdown('<div class="section-header">📍 Location Changes</div>', unsafe_allow_html=True)
-            st.caption("Entities with the most address changes")
-            if analytics['location_changes']:
-                df = pd.DataFrame(analytics['location_changes'])
-                df['display_name'] = df['entity_name'].str[:30] + '...'
-                fig = px.bar(
-                    df, x='location_changes', y='display_name',
-                    orientation='h',
-                    color='location_changes',
-                    color_continuous_scale='Oranges'
-                )
-                fig.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='white',
-                    xaxis_title="Location Changes",
-                    yaxis_title="",
-                    showlegend=False,
-                    height=400
-                )
-                st.plotly_chart(fig, width="stretch")
-            else:
-                st.info("No location changes detected")
+        else:
+            st.info("No registration data for current filters")
     
     except Exception as e:
         st.error(f"⚠️ Error loading analytics: {e}")
+
+# ============================================================
+# MAP VIEW PAGE
+# ============================================================
+elif page == "🗺️ Map View":
+    st.markdown("""
+    <div class="main-header">
+        <h1>🗺️ Map View</h1>
+        <p>Geographic distribution of ABN entities</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    try:
+        # Filters
+        st.markdown('<div class="section-header">🔧 Filters</div>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            states = ["All States"] + get_states()
+            map_state = st.selectbox("State", states, key="map_state")
+        
+        with col2:
+            postcodes = ["All Postcodes"] + get_postcodes()
+            map_postcode = st.selectbox("Postcode", postcodes, key="map_postcode")
+        
+        # Get map data
+        map_data = get_map_data(
+            state=map_state if map_state != "All States" else None,
+            postcode=map_postcode if map_postcode != "All Postcodes" else None
+        )
+        
+        st.markdown(f"**{len(map_data):,} entities matching filters**")
+        st.markdown("---")
+        
+        if map_data:
+            # Australian state coordinates (approximate centroids)
+            state_coords = {
+                'NSW': {'lat': -32.0, 'lon': 147.0},
+                'VIC': {'lat': -37.0, 'lon': 144.5},
+                'QLD': {'lat': -22.0, 'lon': 144.0},
+                'WA': {'lat': -25.0, 'lon': 122.0},
+                'SA': {'lat': -30.0, 'lon': 136.0},
+                'TAS': {'lat': -42.0, 'lon': 146.5},
+                'NT': {'lat': -19.5, 'lon': 133.0},
+                'ACT': {'lat': -35.3, 'lon': 149.1},
+            }
+            
+            # Aggregate by state for map
+            df = pd.DataFrame(map_data)
+            state_counts = df.groupby('state').size().reset_index(name='count')
+            
+            # Add coordinates
+            state_counts['lat'] = state_counts['state'].map(lambda s: state_coords.get(s.strip(), {}).get('lat', -25))
+            state_counts['lon'] = state_counts['state'].map(lambda s: state_coords.get(s.strip(), {}).get('lon', 135))
+            
+            # Create map
+            st.markdown('<div class="section-header">🗺️ Entity Distribution Map</div>', unsafe_allow_html=True)
+            fig = px.scatter_geo(
+                state_counts,
+                lat='lat',
+                lon='lon',
+                size='count',
+                color='count',
+                hover_name='state',
+                hover_data={'count': True, 'lat': False, 'lon': False},
+                color_continuous_scale='Purples',
+                size_max=50,
+                scope='world'
+            )
+            fig.update_geos(
+                visible=True,
+                resolution=50,
+                showcountries=True,
+                countrycolor="Gray",
+                showcoastlines=True,
+                coastlinecolor="Gray",
+                showland=True,
+                landcolor="rgb(30, 30, 50)",
+                showocean=True,
+                oceancolor="rgb(20, 20, 40)",
+                center=dict(lat=-25, lon=135),
+                projection_scale=4
+            )
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                geo_bgcolor='rgba(0,0,0,0)',
+                font_color='white',
+                height=500,
+                margin=dict(l=0, r=0, t=0, b=0)
+            )
+            st.plotly_chart(fig, width="stretch")
+            
+            # Entity table
+            st.markdown('<div class="section-header">📋 Entity List</div>', unsafe_allow_html=True)
+            display_df = df[['abn', 'entity_name', 'entity_type', 'state', 'postcode']].copy()
+            display_df.columns = ['ABN', 'Entity Name', 'Entity Type', 'State', 'Postcode']
+            st.dataframe(display_df, width="stretch", hide_index=True, height=400)
+        else:
+            st.info("No entities found matching the selected filters.")
+    
+    except Exception as e:
+        st.error(f"⚠️ Error loading map data: {e}")
 
 # Footer
 st.markdown("---")

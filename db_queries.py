@@ -259,3 +259,111 @@ def get_analytics_data():
             analytics['location_changes'] = [dict(row) for row in cur.fetchall()]
             
             return analytics
+
+def get_postcodes():
+    """Get list of unique postcodes."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT postcode FROM abn_location_history WHERE postcode IS NOT NULL ORDER BY postcode")
+            return [row[0] for row in cur.fetchall()]
+
+def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
+    """Get filtered data for analytics charts."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            analytics = {}
+            
+            # Build filter conditions
+            conditions = []
+            params = []
+            
+            if state:
+                conditions.append("l.state = %s")
+                params.append(state)
+            if postcode:
+                conditions.append("l.postcode = %s")
+                params.append(postcode)
+            if entity_type:
+                conditions.append("e.entity_type = %s")
+                params.append(entity_type)
+            
+            where_clause = "WHERE l.is_current = true"
+            if conditions:
+                where_clause += " AND " + " AND ".join(conditions)
+            
+            # Filtered entity count
+            cur.execute(f"""
+                SELECT COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+            """, params)
+            analytics['filtered_count'] = cur.fetchone()['count']
+            
+            # Entity types in filtered set
+            cur.execute(f"""
+                SELECT e.entity_type, COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                GROUP BY e.entity_type
+                ORDER BY count DESC
+            """, params)
+            analytics['entity_types'] = [dict(row) for row in cur.fetchall()]
+            
+            # State distribution in filtered set
+            cur.execute(f"""
+                SELECT l.state, COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                GROUP BY l.state
+                ORDER BY count DESC
+            """, params)
+            analytics['state_distribution'] = [dict(row) for row in cur.fetchall()]
+            
+            # Registrations by year in filtered set
+            cur.execute(f"""
+                SELECT EXTRACT(YEAR FROM e.first_active_date)::int as year, COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                AND e.first_active_date IS NOT NULL
+                GROUP BY EXTRACT(YEAR FROM e.first_active_date)
+                ORDER BY year
+            """, params)
+            analytics['by_year'] = [dict(row) for row in cur.fetchall()]
+            
+            return analytics
+
+def get_map_data(state=None, postcode=None):
+    """Get entity data for map view with state/postcode coordinates."""
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            conditions = ["l.is_current = true"]
+            params = []
+            
+            if state:
+                conditions.append("l.state = %s")
+                params.append(state)
+            if postcode:
+                conditions.append("l.postcode = %s")
+                params.append(postcode)
+            
+            where_clause = "WHERE " + " AND ".join(conditions)
+            
+            cur.execute(f"""
+                SELECT 
+                    e.abn,
+                    e.entity_name,
+                    e.entity_type,
+                    l.state,
+                    l.postcode
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                ORDER BY l.state, l.postcode, e.entity_name
+            """, params)
+            
+            return [dict(row) for row in cur.fetchall()]
+
