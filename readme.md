@@ -1,37 +1,52 @@
-# ABN Lookup PDF scraper (Playwright)
+# ABN Scraper & Browser
 
-Python scraper using Playwright to search the ABN Lookup site, navigate pagination, and extract both PDFs and ASIC registry links.
+Python system for scraping, ingesting, and visualizing Australian Business Register (ABR) data.
+
+## Quick Start
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Start PostgreSQL (localhost:5432, db: postgres, user: postgres, pass: password)
+
+# 3. Ingest PDFs
+python abr_ingest_batch.py --dir downloads --init
+
+# 4. Launch UI
+streamlit run streamlit_app.py
+```
+
+## System Components
+
+| Component | Purpose |
+|-----------|---------|
+| `abn_pdf_scraper.py` | Scrapes PDFs from ABN Lookup |
+| `abr_ingest_batch.py` | Batch PDF ingestion |
+| `abr_parsers.py` | PDF parsing (Current + Historical) |
+| `streamlit_app.py` | Web UI for browsing data |
+
+## Documentation
+
+- **[SYSTEM_DOCUMENTATION.md](SYSTEM_DOCUMENTATION.md)** - Full architecture, workflows, dataflows
+- **[README_ABR_Ingestion_Submodule.md](README_ABR_Ingestion_Submodule.md)** - Ingestion design principles
+- **[ARCHITECTURAL_NOTES.md](ARCHITECTURAL_NOTES.md)** - Scraper architecture
+- **[03_parser_rules_abr.md](03_parser_rules_abr.md)** - PDF parsing rules
 
 ## Features
 
-- **Pagination Support**: Automatically navigates through result pages (capturing up to 200 matches).
-- **Tab Navigation**: Downloads both "Current" and "Historical" status PDFs for each entity.
-- **ASIC Link Collection**: Scrapes ASIC registration and Business Name links into a summary text file (bypassing the need to solve CAPTCHAs for automated ASIC downloads).
-- **Descriptive Naming**: Organizes downloads using the format `Content_ABN_EntityName.pdf` or `ASIC_links_EntityName_ABN.txt`.
-- **Dockerized**: Fully containerized to ensure consistent browser environments.
+- **Scraper**: Pagination (200 results), Current + Historical PDFs, ASIC link collection
+- **Ingestion**: SHA-256 idempotency, insert-only, full audit trail
+- **UI**: Dashboard, Search, Entity Detail, Analytics, Map View
+- **Analysis**: Location history, status changes, GST registrations, trading names
 
-## Usage (Docker)
+## Docker Usage
 
-The easiest way to run the scraper is via Docker Compose:
+```bash
+# Update search term in docker.yaml
+docker compose -f docker.yaml up --build
+```
 
-1. Update the search term in `docker.yaml`:
+## Compliance
 
-    ```yaml
-    command: ["T Do", "--max-results", "20", "--headless"]
-    ```
-
-2. Launch the container:
-
-    ```bash
-    docker compose -f docker.yaml up --build
-    ```
-
-3. Check the `downloads/` directory for results.
-
-## Configuration
-
-See `ARCHITECTURAL_NOTES.md` for technical deep-dives and extension paths.
-
-## Compliance Note
-
-Respect the site's robots.txt and terms of use. This script is designed for transparency and reliability with conservative delays.
+Respect ABN Lookup's robots.txt and terms of use.
