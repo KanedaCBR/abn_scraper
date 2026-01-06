@@ -1,0 +1,7 @@
+Entity: NGUYEN, HANG DUONG MINH
+ABN: 14409960819
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=638164833
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=659079704
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx

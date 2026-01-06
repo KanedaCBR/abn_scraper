@@ -1,0 +1,6 @@
+Entity: AUSVIET BRIDGE PTY LTD
+ABN: 50685090797
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=685090797

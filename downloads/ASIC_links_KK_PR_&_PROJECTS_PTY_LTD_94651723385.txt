@@ -1,0 +1,7 @@
+Entity: KK PR & PROJECTS PTY LTD
+ABN: 94651723385
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=659609588
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=651723385

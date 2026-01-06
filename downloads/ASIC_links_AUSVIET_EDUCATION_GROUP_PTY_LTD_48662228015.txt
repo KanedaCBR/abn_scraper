@@ -1,0 +1,6 @@
+Entity: AUSVIET EDUCATION GROUP PTY LTD
+ABN: 48662228015
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=662228015

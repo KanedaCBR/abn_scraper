@@ -1,0 +1,6 @@
+Entity: The trustee for iCAD Business Trust
+ABN: 50274103218
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=611963592
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx

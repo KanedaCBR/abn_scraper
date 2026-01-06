@@ -1,0 +1,6 @@
+Entity: SHAW, STANLEY ARTHUR
+ABN: 51184921472
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=667996876
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx

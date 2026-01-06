@@ -1,0 +1,6 @@
+Entity: CLEAN PARTNER PTY LTD
+ABN: 19160231103
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=160231103

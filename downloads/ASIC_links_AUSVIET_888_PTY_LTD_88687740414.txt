@@ -1,0 +1,7 @@
+Entity: AUSVIET 888 PTY LTD
+ABN: 88687740414
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=688171833
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=687740414

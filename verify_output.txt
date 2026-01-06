@@ -1,0 +1,40 @@
+﻿============================================================
+ABR DATABASE VERIFICATION REPORT
+============================================================
+
+--- TABLE ROW COUNTS ---
+  abn_entity: 267
+  abn_document_registry: 533
+  abn_status_history: 267
+  abn_name_history: 267
+  abn_location_history: 266
+  abn_business_name: 146
+  abn_trading_name: 70
+  abn_gst_history: 137
+  abn_asic_registration: 77
+
+--- DOCUMENT REGISTRY STATUS ---
+  SUCCESS: 533
+
+--- SAMPLE ENTITIES (Top 5) ---
+  ABN: 11009413629 | Name: PETRO GEOCONSULTANTS PTY LTD... | Type: Australian Private Company
+  ABN: 11612209371 | Name: CHURSTAIN, TIA SUSAN... | Type: Individual/Sole Trader
+  ABN: 11613525858 | Name: VO PTY LTD... | Type: Australian Private Company
+  ABN: 11676868836 | Name: NGUYEN, THE VINH... | Type: Individual/Sole Trader
+  ABN: 12729646966 | Name: S.R CARTER & J WRIGHT... | Type: Other Partnership
+
+--- ENTITIES WITH LOCATION CHANGES ---
+
+--- TRADING NAME REUSE (Same name, multiple ABNs) ---
+  'clean': used by 2 ABNs
+  'CLEAN': used by 2 ABNs
+  'Clean As': used by 2 ABNs
+  'HUNG VO': used by 2 ABNs
+  'THE FOOD COMPANY': used by 2 ABNs
+
+--- GST STATUS SUMMARY ---
+  Current: 137
+
+============================================================
+VERIFICATION COMPLETE
+============================================================

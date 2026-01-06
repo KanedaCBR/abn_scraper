@@ -22,6 +22,57 @@ def get_connection():
     finally:
         conn.close()
 
+# High-level entity category mapping SQL CASE expression
+# Note: % escaped as %% to avoid conflicts with psycopg2 parameter formatting
+HIGH_LEVEL_CATEGORY_SQL = """
+    CASE 
+        WHEN entity_type ILIKE '%%individual%%' OR entity_type ILIKE '%%sole trader%%' THEN 'Individual / Sole Trader'
+        WHEN entity_type ILIKE '%%partnership%%' THEN 'Partnership'
+        WHEN entity_type ILIKE '%%trust%%' THEN 'Trust'
+        WHEN entity_type ILIKE '%%company%%' OR entity_type ILIKE '%%pty%%' OR entity_type ILIKE '%%ltd%%' THEN 'Company'
+        WHEN entity_type ILIKE '%%super%%' OR entity_type ILIKE '%%fund%%' THEN 'Superannuation Fund'
+        ELSE 'Other'
+    END
+"""
+
+def map_to_high_level_category(entity_type):
+    """Map detailed entity type to high-level category (Python version)."""
+    if not entity_type:
+        return 'Other'
+    et = entity_type.lower()
+    if 'individual' in et or 'sole trader' in et:
+        return 'Individual / Sole Trader'
+    if 'partnership' in et:
+        return 'Partnership'
+    if 'trust' in et:
+        return 'Trust'
+    if 'company' in et or 'pty' in et or 'ltd' in et:
+        return 'Company'
+    if 'super' in et or 'fund' in et:
+        return 'Superannuation Fund'
+    return 'Other'
+
+def get_postcodes_by_state(state=None):
+    """Get postcodes, optionally filtered by state."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if state:
+                cur.execute("""
+                    SELECT DISTINCT postcode 
+                    FROM abn_location_history 
+                    WHERE postcode IS NOT NULL AND state = %s
+                    ORDER BY postcode
+                """, (state,))
+            else:
+                cur.execute("""
+                    SELECT DISTINCT postcode 
+                    FROM abn_location_history 
+                    WHERE postcode IS NOT NULL 
+                    ORDER BY postcode
+                """)
+            return [row[0] for row in cur.fetchall()]
+
+
 def get_dashboard_stats():
     """Get summary statistics for the dashboard."""
     with get_connection() as conn:
@@ -44,11 +95,11 @@ def get_dashboard_stats():
             """)
             stats['document_status'] = {row['ingestion_status']: row['count'] for row in cur.fetchall()}
             
-            # Entity types distribution
-            cur.execute("""
-                SELECT entity_type, COUNT(*) as count 
+            # Entity types distribution (HIGH-LEVEL categories for dashboard)
+            cur.execute(f"""
+                SELECT {HIGH_LEVEL_CATEGORY_SQL} as entity_type, COUNT(*) as count 
                 FROM abn_entity 
-                GROUP BY entity_type 
+                GROUP BY {HIGH_LEVEL_CATEGORY_SQL}
                 ORDER BY count DESC
             """)
             stats['entity_types'] = [dict(row) for row in cur.fetchall()]
@@ -267,7 +318,7 @@ def get_postcodes():
             cur.execute("SELECT DISTINCT postcode FROM abn_location_history WHERE postcode IS NOT NULL ORDER BY postcode")
             return [row[0] for row in cur.fetchall()]
 
-def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
+def get_analytics_data_filtered(state=None, postcode=None, entity_type=None, use_high_level_category=False):
     """Get filtered data for analytics charts."""
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -284,7 +335,11 @@ def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
                 conditions.append("l.postcode = %s")
                 params.append(postcode)
             if entity_type:
-                conditions.append("e.entity_type = %s")
+                # Support filtering by high-level category or detailed type
+                if entity_type in ['Individual / Sole Trader', 'Partnership', 'Trust', 'Company', 'Superannuation Fund', 'Other']:
+                    conditions.append(f"{HIGH_LEVEL_CATEGORY_SQL} = %s")
+                else:
+                    conditions.append("e.entity_type = %s")
                 params.append(entity_type)
             
             where_clause = "WHERE l.is_current = true"
@@ -300,7 +355,18 @@ def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
             """, params)
             analytics['filtered_count'] = cur.fetchone()['count']
             
-            # Entity types in filtered set
+            # Entity types - HIGH-LEVEL categories
+            cur.execute(f"""
+                SELECT {HIGH_LEVEL_CATEGORY_SQL} as entity_type, COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                GROUP BY {HIGH_LEVEL_CATEGORY_SQL}
+                ORDER BY count DESC
+            """, params)
+            analytics['entity_types_high_level'] = [dict(row) for row in cur.fetchall()]
+            
+            # Entity types - DETAILED categories
             cur.execute(f"""
                 SELECT e.entity_type, COUNT(DISTINCT e.abn) as count
                 FROM abn_entity e
@@ -309,9 +375,9 @@ def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
                 GROUP BY e.entity_type
                 ORDER BY count DESC
             """, params)
-            analytics['entity_types'] = [dict(row) for row in cur.fetchall()]
+            analytics['entity_types_detailed'] = [dict(row) for row in cur.fetchall()]
             
-            # State distribution in filtered set
+            # State distribution
             cur.execute(f"""
                 SELECT l.state, COUNT(DISTINCT e.abn) as count
                 FROM abn_entity e
@@ -322,7 +388,20 @@ def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
             """, params)
             analytics['state_distribution'] = [dict(row) for row in cur.fetchall()]
             
-            # Registrations by year in filtered set
+            # Postcode distribution (for when state is selected)
+            cur.execute(f"""
+                SELECT l.postcode, COUNT(DISTINCT e.abn) as count
+                FROM abn_entity e
+                JOIN abn_location_history l ON e.abn = l.abn
+                {where_clause}
+                AND l.postcode IS NOT NULL
+                GROUP BY l.postcode
+                ORDER BY count DESC
+                LIMIT 20
+            """, params)
+            analytics['postcode_distribution'] = [dict(row) for row in cur.fetchall()]
+            
+            # Registrations by year
             cur.execute(f"""
                 SELECT EXTRACT(YEAR FROM e.first_active_date)::int as year, COUNT(DISTINCT e.abn) as count
                 FROM abn_entity e
@@ -336,7 +415,7 @@ def get_analytics_data_filtered(state=None, postcode=None, entity_type=None):
             
             return analytics
 
-def get_map_data(state=None, postcode=None):
+def get_map_data(state=None, postcode=None, entity_type=None):
     """Get entity data for map view with state/postcode coordinates."""
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -349,6 +428,13 @@ def get_map_data(state=None, postcode=None):
             if postcode:
                 conditions.append("l.postcode = %s")
                 params.append(postcode)
+            if entity_type:
+                # Support filtering by high-level category or detailed type
+                if entity_type in ['Individual / Sole Trader', 'Partnership', 'Trust', 'Company', 'Superannuation Fund', 'Other']:
+                    conditions.append(f"{HIGH_LEVEL_CATEGORY_SQL} = %s")
+                else:
+                    conditions.append("e.entity_type = %s")
+                params.append(entity_type)
             
             where_clause = "WHERE " + " AND ".join(conditions)
             

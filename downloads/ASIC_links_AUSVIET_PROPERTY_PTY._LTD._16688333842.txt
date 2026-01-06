@@ -1,0 +1,6 @@
+Entity: AUSVIET PROPERTY PTY. LTD.
+ABN: 16688333842
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/panelSearch.jspx?searchType=OrgAndBusNm&searchText=688333842

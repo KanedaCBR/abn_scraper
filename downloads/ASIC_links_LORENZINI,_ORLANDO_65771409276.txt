@@ -1,0 +1,6 @@
+Entity: LORENZINI, ORLANDO
+ABN: 65771409276
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=688651881
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx

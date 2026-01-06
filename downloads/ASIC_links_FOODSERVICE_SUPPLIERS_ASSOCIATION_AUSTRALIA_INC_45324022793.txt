@@ -1,0 +1,6 @@
+Entity: FOODSERVICE SUPPLIERS ASSOCIATION AUSTRALIA INC
+ABN: 45324022793
+========================================
+ASIC/Business Name links:
+https://connectonline.asic.gov.au/RegistrySearch/bySearchId.jsp?searchIdType=BUSN&searchId=681289350
+https://connectonline.asic.gov.au/RegistrySearch/faces/landing/ProfessionalRegisters.jspx
